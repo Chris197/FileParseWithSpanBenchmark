@@ -1,8 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Order;
 using BenchmarkDotNet.Running;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -12,13 +10,7 @@ namespace SpanTest
     {
         static void Main(string[] args)
         {
-#if RELEASE
             BenchmarkRunner.Run<SpanTester>();
-#else
-            var s = new SpanTester { RowCount = 50 };
-            var withoutSpan = s.WithoutSpan();
-            var withSpan = s.WithSpan();
-#endif
         }
     }
 
@@ -39,7 +31,10 @@ namespace SpanTest
         public int RowCount { get; set; }
 
 
-        [Benchmark]
+        /// <summary>
+        /// Parses the file using a span of bytes, decoding to string per field.
+        /// </summary>
+        [Benchmark]        
         public void WithSpan()
         {
             var buffer = new Span<byte>(_filecontent);
@@ -49,10 +44,13 @@ namespace SpanTest
             {
                 var row = buffer.Slice(cursor, ROWSIZE);
                 cursor += ROWSIZE;
-                FooLarge.ReadWithSpan(row, _encoding);
+                Foo.ReadWithSpan(row, _encoding);
             }
         }
 
+        /// <summary>
+        /// Parses the file using a span of char, after first converting the byte array to a string.
+        /// </summary>
         [Benchmark]
         public void WithSpan_StringFirst()
         {
@@ -64,15 +62,16 @@ namespace SpanTest
             {
                 var row = buffer.Slice(cursor, ROWSIZE);
                 cursor += ROWSIZE;
-                FooLarge.ReadWithSpan(row);
+                Foo.ReadWithSpan(row);
             }
         }
 
+        /// <summary>
+        /// Parses the file by decoding to string using a StreamReader and then using Substring to read each field.
+        /// </summary>
         [Benchmark]
         public void WithoutSpan()
         {
-            var result = new FooResult();// { FooList = new List<IFoo>(RowCount) };
-
             using (var stream = new MemoryStream(_filecontent))
             using (var source = new StreamReader(stream, _encoding))
             {
@@ -81,7 +80,7 @@ namespace SpanTest
                 {
                     source.Read(buffer, 0, ROWSIZE);
                     var row = new string(buffer);
-                    FooLarge.Read(row);
+                    Foo.Read(row);
                 }
             }
         }
