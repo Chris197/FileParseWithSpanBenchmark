@@ -8,7 +8,7 @@ namespace SpanTest
     {
         public static string Read(this string input, int startIndex, int endIndex)
         {
-            return input.Substring(startIndex - 1, endIndex - startIndex + 1)/*.Trim()*/;
+            return input.Substring(startIndex, endIndex - startIndex)/*.Trim()*/;
         }
 
         public static int ReadInt(this string input, int startIndex, int endIndex)
@@ -19,7 +19,7 @@ namespace SpanTest
 
         public static string Read(this ReadOnlySpan<char> input, int startIndex, int endIndex)
         {
-            return input.Slice(startIndex - 1, endIndex - startIndex + 1).ToString()/*.Trim()*/;
+            return new string(input.Slice(startIndex, endIndex - startIndex))/*.Trim()*/;
         }
 
         public static int ReadInt(this ReadOnlySpan<char> input, int startIndex, int endIndex)
@@ -29,7 +29,7 @@ namespace SpanTest
 
         public static string Read(this ReadOnlySpan<byte> input, int startIndex, int endIndex, Encoding encoding)
         {
-            return encoding.GetString(input.Slice(startIndex - 1, endIndex - startIndex + 1))/*.Trim()*/;
+            return encoding.GetString(input.Slice(startIndex, endIndex - startIndex))/*.Trim()*/;
         }
 
         public static int ReadInt(this ReadOnlySpan<byte> input, int startIndex, int endIndex, Encoding encoding)

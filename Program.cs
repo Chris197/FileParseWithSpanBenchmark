@@ -12,20 +12,6 @@ namespace SpanTest
     {
         static void Main(string[] args)
         {
-            /*
-            Console.Write(new string('0', 252));
-            Console.Write(new string('1', 252));
-            Console.Write(new string('2', 252));
-            Console.Write(new string('3', 252));
-            Console.Write(new string('4', 252));
-            Console.Write(new string('5', 252));
-            Console.Write(new string('6', 252));
-            Console.Write(new string('7', 252));
-            Console.Write(new string('8', 252));
-            Console.Write(new string('9', 252));
-            Console.ReadLine();
-            */
-
 #if RELEASE
             BenchmarkRunner.Run<SpanTester>();
 #else
@@ -36,10 +22,7 @@ namespace SpanTest
         }
     }
 
-    [WarmupCount(3)]
-    [IterationCount(5)]
     [RankColumn]
-    //[Orderer(SummaryOrderPolicy.FastestToSlowest)]
     [MemoryDiagnoser]
     public class SpanTester
     {
@@ -50,7 +33,6 @@ namespace SpanTest
         public SpanTester()
         {
             _filecontent = File.ReadAllBytes("data.txt");
-            //_filecontent = File.ReadAllBytes("kpn.CU");
         }
 
         [Params(1, 50)]
@@ -58,27 +40,36 @@ namespace SpanTest
 
 
         [Benchmark]
-        public FooResult WithSpan()
+        public void WithSpan()
         {
-            var result = new FooResult();// { FooList = new List<IFoo>(RowCount) };
-
             var buffer = new Span<byte>(_filecontent);
+            int cursor = 0;
+
+            for (int i = 0; i < RowCount; i++)
+            {
+                var row = buffer.Slice(cursor, ROWSIZE);
+                cursor += ROWSIZE;
+                FooLarge.ReadWithSpan(row, _encoding);
+            }
+        }
+
+        [Benchmark]
+        public void WithSpan_StringFirst()
+        {
+            var buffer1 = new Span<byte>(_filecontent).Slice(0, RowCount * ROWSIZE);
+            var buffer = _encoding.GetString(buffer1).AsSpan();
+
             int cursor = 0;
             for (int i = 0; i < RowCount; i++)
             {
                 var row = buffer.Slice(cursor, ROWSIZE);
                 cursor += ROWSIZE;
-
-                //result.Foo1 = Foo.ReadWithSpan(row, _encoding);
-                //result.Foo2 = FooInt.ReadWithSpan(row, _encoding);
-                //result.FooList.Add(FooLarge.ReadWithSpan(row, _encoding));
-                result.FooLarge = FooLarge.ReadWithSpan(row, _encoding);
+                FooLarge.ReadWithSpan(row);
             }
-            return result;
         }
 
         [Benchmark]
-        public FooResult WithoutSpan()
+        public void WithoutSpan()
         {
             var result = new FooResult();// { FooList = new List<IFoo>(RowCount) };
 
@@ -90,14 +81,11 @@ namespace SpanTest
                 {
                     source.Read(buffer, 0, ROWSIZE);
                     var row = new string(buffer);
-                    //result.Foo1 = Foo.Read(row);
-                    //result.FooList.Add(FooLarge.Read(row));
-                    result.FooLarge = FooLarge.Read(row);
+                    FooLarge.Read(row);
+                }
             }
-            }
-            return result;
         }
     }
 
-    
+
 }
